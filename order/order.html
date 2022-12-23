@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Order</title>
+    <script src="https://unpkg.com/axios@1.1.2/dist/axios.min.js"></script>
+    <script src="/js/ApiService.js"></script>
+    <!--[if IE]>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title></title>
+
+    <!-- Favicons Icon -->
+    <link rel="icon" href="http://demo.magikthemes.com/skin/frontend/base/default/favicon.ico" type="image/x-icon"/>
+    <link rel="shortcut icon" href="http://demo.magikthemes.com/skin/frontend/base/default/favicon.ico"
+          type="image/x-icon"/>
+
+    <!-- Mobile Specific -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    <!-- CSS Style -->
+    <!--<link rel="stylesheet" href="css/animate.css" type="text/css">-->
+
+    <!-- Google Fonts -->
+    <link href='https://fonts.googleapis.com/css?family=Bitter:400,700,400italic' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="../css/bootstrap.min.css">
+    <link rel="stylesheet" href="../css/owl.carousel.css">
+    <link rel="stylesheet" href="../css/owl.theme.css">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/font-awesome.css">
+
+    <script src="../js/jquery.min.js"></script>
+    <script src="../js/bootstrap.min.js"></script>
+    <script src="../js/parallax.js"></script>
+    <script src="../js/common.js"></script>
+    <script src="../js/owl.carousel.min.js"></script>
+    <script src="../js/showList.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type="text/javascript">
+        showAllOrder();
+
+        function addNewOrder() {
+            let startTime = $('#startTime').val();
+            let timeRent = $('#timeRent').val();
+            let status = $('#status').val();
+            //nghi nó chuyển về string nên nó không add vô cần chuyển về int
+            let provider_id = $('#provider_id').val();
+            let user_id = $('#user_id').val();
+            let newOrder = {
+                startTime: startTime,
+                timeRent: timeRent,
+                status: status,
+                provider_id: provider_id,
+                user_id: user_id,
+            };
+            ApiService.post("/orders", newOrder).then(showAllOrder)
+            // $.ajax({
+            //     headers: {
+            //         'Accept': 'application/json',
+            //         'Content-Type': 'application/json'
+            //     },
+            //     type: "POST",
+            //     data: JSON.stringify(newOrder),
+            //     url: "http://localhost:8080/orders",
+            //     success: showAllOrder
+            // });
+            event.preventDefault();
+        }
+
+        function showAddOrder(userid) {
+
+            let form = `
+                        <br><input type="text" id="user_id" placeholder="ID Khách hàng">
+                        <br><input type="text" id="provider_id" placeholder="ID người Cung Cấp">
+                        <br><input type="datetime-local" id="startTime" placeholder="Ngày Bắt Đầu">
+                        <br><input type="text" id="timeRent" placeholder="Số giờ thuê">
+                        <br><button onclick="addNewOrder()">Save</button><br><input type="hidden" id="userId" value="${userid}">
+                        `
+
+            document.getElementById("displayOrder").innerHTML = form;
+        }
+
+        function showAllOrder() {
+            ApiService.get('/orders').then(data => {
+                let res = `<tr>
+                        <th>STT</th>
+                        <th>Name User</th>
+                        <th>Name Provider</th>
+                        <th>StartTime</th>
+                        <th>Time Rent</th>
+                        <th>Status</th>
+                        <th>Delete</th>
+                    </tr>`;
+                for (let i = 0; i < data.length; i++) {
+                    let order = data[i];
+                    console.log(order)
+                    res += `<tr>
+                          <td>${i + 1}</td>
+                          <td>${order.user.userName}</td>
+                          <td>${order.provider.name}</td>
+                          <td>${order.startTime.slice(0, 10)}</td>
+                          <td>${order.timeRent}</td>
+                          <td>
+                              <a class="changeStatus" onclick='changeStatus($(this))' href ="${order.id}">${order.status}</a>
+                          </td>
+                          <td>
+                              <a class="deleteOrder" onclick='deleteOrderById($(this))' href="${order.id}">Delete</a>
+                          </td>
+                          </tr>`;
+
+                }
+                document.getElementById("displayOrder").innerHTML = "<table>" + res + "</table>"
+
+            })
+        }
+
+        function changeStatus(id) {
+
+            // let startTime = $('#startTime').val();
+            // let timeRent = $('#timeRent').val();
+            // let status = $('#status').val();
+            // let provider_id = $('#provider_id').val();
+            // let user_id = $('#user_id').val();
+            // let newOrder = {
+            //     startTime: startTime,
+            //     timeRent: timeRent,
+            //     status: status,
+            //     provider_id: provider_id,
+            //     user_id: user_id,
+            // };
+            ApiService.PUT(`/orders + ${id}`).then(data => {
+                console.log(data)
+                // data.status: "paid"
+                return data
+
+            })
+
+            // $.ajax({
+            //     headers: {
+            //         'Accept': '*/*',
+            //         'Content-Type': 'multipart/form-data',
+            //     },
+            //     type: "PUT",
+            //     url: "http://localhost:8080/orders" + id,
+            //     success: function () {
+            //         alert("done");
+            //     }
+            // })
+        }
+
+        function deleteOrderById(a) {
+            let id = a.attr("href");
+            $.ajax({
+                type: "DELETE",
+                url: `http://localhost:8080/orders/${id}`,
+                success: function (data) {
+                    a.parent().parent().remove();
+                    location.reload();
+                    getAllProvider();
+                }
+            })
+            // ApiService.delete(`'/orders' + ${id}`).then(data => {
+            //     // data.remove()idid
+            //     data.id.remove();
+            //     location.reload();
+            //     showAllOrder();
+            // })
+
+        }
+
+    </script>
+</head>
+<body class="cms-index-index" onload="showAllOrder()">
+<div class="page">
+    <!-- Header -->
+    <header class="header-container">
+        <div class="header-top">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-5 col-md-5 col-xs-6">
+
+                        <!-- Header Language -->
+                        <div class="dropdown block-language-wrapper"><a role="button" data-toggle="dropdown"
+                                                                        data-target="#"
+                                                                        class="block-language dropdown-toggle" href="#">
+                            <img src="images/english.png" alt="language"> English <i class="icon-angle-down"></i> </a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li role="presentation"><a role="menuitem" tabindex="-1" href="#"><img
+                                        src="images/english.png" alt="language"> English </a></li>
+                                <li role="presentation"><a role="menuitem" tabindex="-1" href="#"><img
+                                        src="images/francais.png" alt="language"> French </a></li>
+                                <li role="presentation"><a role="menuitem" tabindex="-1" href="#"><img
+                                        src="images/german.png" alt="language"> German </a></li>
+                            </ul>
+                        </div>
+
+                        <!-- End Header Language -->
+                        <!-- Header Currency -->
+                        <div class="dropdown block-currency-wrapper"><a role="button" data-toggle="dropdown"
+                                                                        data-target="#"
+                                                                        class="block-currency dropdown-toggle" href="#">
+                            USD <i class="icon-angle-down"></i></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li role="presentation"><a role="menuitem" tabindex="-1" href="#"> $ - Dollar </a></li>
+                                <li role="presentation"><a role="menuitem" tabindex="-1" href="#"> £ - Pound </a></li>
+                                <li role="presentation"><a role="menuitem" tabindex="-1" href="#"> € - Euro </a></li>
+                            </ul>
+                        </div>
+
+                        <!-- End Header Currency -->
+                        <div class="welcome-msg hidden-xs"> Default welcome msg!</div>
+                    </div>
+                    <div class="col-lg-7 col-md-7 col-xs-6">
+
+                        <!-- Header Top Links -->
+                        <div class="toplinks">
+                            <div class="links">
+                                <div class="myaccount"><a title="My Account"
+                                                          href="login.html"><span>My Account</span></a></div>
+                                <div class="check"><a href="checkout.html" title="Checkout"><span>Checkout</span></a>
+                                </div>
+                                <div class="demo"><a href="#" title="Demo"><span>Demo</span></a></div>
+                                <!-- Header Company -->
+                                <div class="dropdown block-company-wrapper hidden-xs"><a role="button"
+                                                                                         data-toggle="dropdown"
+                                                                                         data-target="#"
+                                                                                         class="dropdown-toggle"
+                                                                                         href="#"> <span>Company</span>
+                                    <i class="icon-angle-down"></i></a>
+                                    <ul class="dropdown-menu" role="menu">
+                                        <li role="presentation"><a role="menuitem" tabindex="-1" href="about_us.html">
+                                            About Us </a></li>
+                                        <li role="presentation"><a role="menuitem" tabindex="-1" href="#"> Customer
+                                            Service </a></li>
+                                        <li role="presentation"><a role="menuitem" tabindex="-1" href="#"> Privacy
+                                            Policy </a></li>
+                                        <li role="presentation"><a role="menuitem" tabindex="-1" href="site_map.html">Site
+                                            Map </a></li>
+                                        <li role="presentation"><a role="menuitem" tabindex="-1" href="#">Search
+                                            Terms </a></li>
+                                        <li role="presentation"><a role="menuitem" tabindex="-1" href="#">Advanced
+                                            Search </a></li>
+                                    </ul>
+                                </div>
+                                <!-- End Header Company -->
+                                <div class="login"><a href="login.html"><span>Log In</span></a></div>
+                            </div>
+                        </div>
+                        <!-- End Header Top Links -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </header>
+    <!-- end header -->
+    <!-- Navbar -->
+    <nav>
+        <div class="container">
+            <div class="nav-inner">
+
+                <ul id="nav" class="hidden-xs">
+                    <li id="nav-home" class="level0 parent drop-menu active"><a href="home.html"><span>Home</span> </a>
+                    </li>
+                    <li class="level0 parent drop-menu"><a href="#"><span>Pages</span> </a>
+                        <ul style="display: none;" class="level1">
+                            <li class="level1 first"><a href="grid.html"><span>User</span></a></li>
+                            <li class="level1 nav-10-2"> <a href="ProviderFullList.html"> <span>Provider</span> </a> </li>
+                            <li class="level1 nav-10-3"> <a href="product_detail.html"> <span>Order</span> </a> </li>
+                            <li class="level1 nav-10-4"> <a href="shopping_cart.html"> <span>Shopping Cart</span> </a> </li>
+
+                            <li class="level1"><a href="error404.html"><span>404 Error Page</span></a> </li>
+                        </ul>
+                    </li>
+                    <li class="level0 nav-8 level-top"> <a href="maleProviderList.html" class="level-top"> <span>Male</span> </a> </li>
+                    <li class="level0 nav-8 level-top"> <a href="femaleProviderList.html" class="level-top"> <span>FeMale</span> </a> </li>
+                    <li class="level0 parent drop-menu"><a href="#"><span>Features</span> </a>
+                        <ul style="display: none;" class="level1">
+                            <li class="level1"><a href="Service.html"><span>Servicer</span></a> </li>
+                            <li class="level1"><a href="user.html"><span>Check User</span></a> </li>
+                            <li class="level1"><a href="search.html"><span>Advanced Search</span></a> </li>
+                            <li class="level1"><a href="contact_us.html"><span>search</span></a> </li>
+                        </ul>
+                    </li>
+                    <li class="nav-custom-link level0 level-top parent"> <a class="level-top" href="#"><span>Custom</span></a>
+                        <div style="display: none; left: 0px;" class="level0-wrapper">
+                            <div class="header-nav-dropdown-wrapper clearer">
+                                <div class="grid12-5">
+                                    <h4 class="heading">HTML5 + CSS3</h4>
+                                    <div class="ccs3-html5-box"><em class="icon-html5">&nbsp;</em> <em class="icon-css3">&nbsp;</em></div>
+                                    <p>Our designed to deliver almost everything you want to do online without requiring additional plugins.CSS3 has been split into "modules".</p>
+                                </div>
+                                <div class="grid12-5">
+                                    <h4 class="heading">Responsive Design</h4>
+                                    <a href="#//">
+                                        <div class="icon-custom-reponsive"></div>
+                                    </a>
+                                    <p>Responsive design is a Web design to provide an optimal navigation with a minimum of resizing, and scrolling across a wide range of devices.</p>
+                                </div>
+                                <div class="grid12-5">
+                                    <h4 class="heading">Google Fonts</h4>
+                                    <a href="#//">
+                                        <div class="icon-custom-google-font"></div>
+                                    </a>
+                                    <p>Our font delivery service is built upon a reliable, global network of servers. Our flexible solution provides multiple implementation options.</p>
+                                </div>
+                                <div class="grid12-5">
+                                    <h4 class="heading">Smart Product Grid</h4>
+                                    <a href="#//">
+                                        <div class="icon-custom-grid"></div>
+                                    </a>
+                                    <p>Smart Product Grid is uses maximum available width of the screen to display content. It can be displayed on any screen or any devices.</p>
+                                </div>
+                                <br>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+                <!-- Search-col -->
+                <div class="search-box">
+
+                    <a href="search.html" class="btn-primary-lg" style="font-size: 30px">Search</a>
+                </div>
+                <!-- End Search-col -->
+            </div>
+        </div>
+    </nav>
+    <!-- end nav -->
+    <button onclick="showAddOrder()">Thêm Order</button>
+
+    <div id="displayOrder"></div>
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-middle">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-3 col-md-4 col-sm-4 col-xs-12">
+                        <div class="footer-logo"><a href="" title="Logo"><img src="images/logo.png" alt="logo"></a></div>
+                        <address>
+                            <i class="add-icon">&nbsp;</i>123 Main Street, Anytown, <br>
+                            &nbsp;CA 12345  USA
+                        </address>
+                        <div class="phone-footer"><i class="phone-icon">&nbsp;</i> +1 800 123 1234</div>
+                        <div class="email-footer"><i class="email-icon">&nbsp;</i> <a href="mailto:support@magikcommerce.com">support@magikcommerce.com</a> </div>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-sm-4 col-xs-12">
+                        <h4>Shopping Guide</h4>
+
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-sm-4 col-xs-12">
+                        <h4>Style Advisor</h4>
+
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-sm-3 col-xs-12">
+                        <h4>Information</h4>
+
+                    </div>
+                    <div class="col-lg-3 col-md-8 col-sm-9 col-xs-12">
+                        <div class="block-subscribe">
+                            <h4>Sign up for emails</h4>
+
+                        </div>
+                        <div class="social">
+                            <h4>Follow Us</h4>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="container">
+                <div class="row">
+                    <div class="col-sm-4 col-xs-12 coppyright"> &copy; 2015 Magikcommerce. All Rights Reserved.</div>
+                    <div class="col-sm-8 col-xs-12 company-links">
+                        <ul class="links">
+                            <li><a href="#" title="Magento Themes">Magento Themes</a></li>
+                            <li><a href="#" title="Premium Themes">Premium Themes</a></li>
+                            <li><a href="#" title="Responsive Themes">Responsive Themes</a></li>
+                            <li class="last"><a href="#" title="Magento Extensions">Magento Extensions</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <!-- End Footer -->
+
+</div>
+</body>
+</html>
